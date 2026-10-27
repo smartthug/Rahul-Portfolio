@@ -1,33 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Architects_Daughter,
-  Caveat,
-  Inter,
-  JetBrains_Mono,
-  Lexend_Mega,
-  Playfair_Display,
-  Staatliches,
-  VT323,
-} from "next/font/google";
+// Fonts are bundled from npm (@fontsource) instead of fetched from Google at
+// build time, so builds never depend on the Google Fonts network response.
+import "@fontsource/inter/latin-300.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-700.css";
+import "@fontsource/inter/latin-900.css";
+import "@fontsource/lexend-mega/latin-800.css";
+import "@fontsource/lexend-mega/latin-900.css";
+import "@fontsource/staatliches/latin-400.css";
+import "@fontsource/jetbrains-mono/latin-400.css";
+import "@fontsource/jetbrains-mono/latin-500.css";
+import "@fontsource/jetbrains-mono/latin-700.css";
+import "@fontsource/caveat/latin-600.css";
+import "@fontsource/caveat/latin-700.css";
+import "@fontsource/architects-daughter/latin-400.css";
+import "@fontsource/vt323/latin-400.css";
+import "@fontsource/playfair-display/latin-600.css";
+import "@fontsource/playfair-display/latin-800.css";
+import "@fontsource/playfair-display/latin-600-italic.css";
+import "@fontsource/playfair-display/latin-800-italic.css";
 import { SITE } from "@/lib/site";
 import "./globals.css";
-
-// Above-the-fold fonts are preloaded; the rest load when their section renders.
-const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "700", "900"], variable: "--font-sans", display: "swap" });
-const mega = Lexend_Mega({ subsets: ["latin"], weight: ["800", "900"], variable: "--font-mega", display: "swap" });
-const staat = Staatliches({ subsets: ["latin"], weight: "400", variable: "--font-staat", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-mono", display: "swap" });
-const caveat = Caveat({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-hand", display: "swap", preload: false });
-const sketch = Architects_Daughter({ subsets: ["latin"], weight: "400", variable: "--font-sketch", display: "swap", preload: false });
-const pixel = VT323({ subsets: ["latin"], weight: "400", variable: "--font-pixel", display: "swap", preload: false });
-const serif = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "800"],
-  style: ["normal", "italic"],
-  variable: "--font-serif",
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -83,11 +76,9 @@ const jsonLd = {
   knowsAbout: ["React", "Next.js", "Tailwind CSS", "JavaScript", "TypeScript", "Web design", "AI integration"],
 };
 
-const fontVars = [inter, mega, staat, mono, caveat, sketch, pixel, serif].map((f) => f.variable).join(" ");
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={fontVars}>
+    <html lang="en">
       <body>
         <a
           href="#main"

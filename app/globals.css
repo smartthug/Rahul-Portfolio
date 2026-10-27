@@ -5,6 +5,14 @@
 @layer base {
   :root {
     color-scheme: light;
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-mega: "Lexend Mega", ui-sans-serif, system-ui, sans-serif;
+    --font-staat: "Staatliches", Impact, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --font-hand: "Caveat", cursive;
+    --font-sketch: "Architects Daughter", cursive;
+    --font-pixel: "VT323", ui-monospace, monospace;
+    --font-serif: "Playfair Display", Georgia, serif;
   }
 
   @media (prefers-reduced-motion: no-preference) {
