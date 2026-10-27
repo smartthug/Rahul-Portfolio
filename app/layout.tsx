@@ -1,66 +1,105 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito_Sans, Sora, JetBrains_Mono } from "next/font/google";
+import {
+  Architects_Daughter,
+  Caveat,
+  Inter,
+  JetBrains_Mono,
+  Lexend_Mega,
+  Playfair_Display,
+  Staatliches,
+  VT323,
+} from "next/font/google";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
-const sans = Nunito_Sans({
+// Above-the-fold fonts are preloaded; the rest load when their section renders.
+const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "700", "900"], variable: "--font-sans", display: "swap" });
+const mega = Lexend_Mega({ subsets: ["latin"], weight: ["800", "900"], variable: "--font-mega", display: "swap" });
+const staat = Staatliches({ subsets: ["latin"], weight: "400", variable: "--font-staat", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-mono", display: "swap" });
+const caveat = Caveat({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-hand", display: "swap", preload: false });
+const sketch = Architects_Daughter({ subsets: ["latin"], weight: "400", variable: "--font-sketch", display: "swap", preload: false });
+const pixel = VT323({ subsets: ["latin"], weight: "400", variable: "--font-pixel", display: "swap", preload: false });
+const serif = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "900"],
+  weight: ["600", "800"],
   style: ["normal", "italic"],
-  variable: "--font-sans",
+  variable: "--font-serif",
   display: "swap",
-  // Next ships no metric override file for Nunito Sans, which logs a noisy
-  // warning on every dev cold-start. The font still loads fine — we just
-  // opt out of the metric-adjusted fallback.
-  adjustFontFallback: false,
-});
-
-const display = Sora({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-mono",
-  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
-  title: "Rahul — Full Stack Developer & Freelancer",
-  description:
-    "Full Stack Developer building modern, high-performance web apps with the MERN stack, Next.js, AI integration and interactive frontends.",
-  metadataBase: new URL("https://example.com"),
+  metadataBase: new URL(SITE.url),
+  title: SITE.fullTitle,
+  description: SITE.description,
+  alternates: { canonical: "/" },
+  authors: [{ name: SITE.name, url: SITE.url }],
+  keywords: [
+    "freelance web developer Chennai",
+    "web developer Chennai",
+    "business website developer",
+    "landing page developer",
+    "React developer",
+    "Next.js developer",
+    "website redesign",
+  ],
   openGraph: {
-    title: "Rahul — Full Stack Developer & Freelancer",
-    description:
-      "Full Stack Developer building modern, high-performance web apps with the MERN stack and AI.",
     type: "website",
+    url: "/",
+    siteName: `${SITE.name} — Web Developer`,
+    title: SITE.fullTitle,
+    description: SITE.description,
+    locale: "en_IN",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE.fullTitle,
+    description: SITE.description,
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  themeColor: "#f6f1e8",
+  themeColor: "#18181b",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: SITE.name,
+  jobTitle: SITE.role,
+  url: SITE.url,
+  email: `mailto:${SITE.email}`,
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Chennai",
+    addressRegion: "Tamil Nadu",
+    addressCountry: "IN",
+  },
+  sameAs: [SITE.github, SITE.linkedin],
+  knowsAbout: ["React", "Next.js", "Tailwind CSS", "JavaScript", "TypeScript", "Web design", "AI integration"],
+};
+
+const fontVars = [inter, mega, staat, mono, caveat, sketch, pixel, serif].map((f) => f.variable).join(" ");
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${sans.variable} ${mono.variable}`}
-    >
-      <body className="font-sans bg-cream-50 text-ink-950 antialiased">
+    <html lang="en" className={fontVars}>
+      <body>
+        <a
+          href="#main"
+          className="fixed left-4 top-4 z-[100] -translate-y-24 border-2 border-black bg-sun px-4 py-3 font-mono text-sm font-bold uppercase text-black transition-transform focus:translate-y-0"
+        >
+          Skip to content
+        </a>
         {children}
-        <div className="grain" aria-hidden />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </body>
     </html>
   );

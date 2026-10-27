@@ -2,23 +2,17 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[100svh] flex-col items-center justify-center bg-cream-50 px-6 text-center text-ink-950">
-      <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-950/45">
-        Error · 404
-      </span>
-      <h1 className="display mt-6 text-[18vw] tracking-tightest md:text-[10vw]">
-        lost in <span className="text-red">orbit.</span>
+    <main className="flex min-h-[100svh] flex-col items-center justify-center bg-paper px-4 text-center text-ink">
+      <p className="label">[ Error // 404 ]</p>
+      <h1 className="mt-5 border-3 border-ink bg-sun px-4 py-2 font-display text-[clamp(2.5rem,9vw,5rem)] uppercase leading-none shadow-brut-lg">
+        Page not found
       </h1>
-      <p className="mt-6 max-w-md text-ink-950/65">
-        That page drifted somewhere we can&apos;t reach. Let&apos;s get you
-        back to the launch pad.
+      <p className="mt-6 max-w-md text-lg text-ink-soft">
+        That page doesn&apos;t exist or has moved. The homepage has everything: work, services and contact.
       </p>
-      <Link
-        href="/"
-        className="mt-10 rounded-full bg-ink-950 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-cream-50 transition hover:bg-red"
-      >
-        Return home ↗
+      <Link href="/" className="btn btn-dark mt-8">
+        Back to homepage
       </Link>
-    </div>
+    </main>
   );
 }

@@ -1,253 +1,271 @@
-"use client";
+import Doodle from "@/components/Doodle";
 
-import dynamic from "next/dynamic";
-import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import ScrambleText from "@/components/ScrambleText";
+/*
+ * Six "fractured" panels, each in a different design style. On large screens
+ * they are clip-path polygons over a black base, with lines drawn on the
+ * seams. Below lg they stack as slanted bands.
+ *
+ * Corners (percent of the hero box): A(45,0) · B(40,52) · C(0,45) · D(70,48)
+ * E(100,40) · F(35,100) · G(65,100) · H(84,44.27) · I(84,100)
+ *
+ * On scroll, --m (0→1, set in globals.css from ScrollFX's --p) slides the
+ * H–I seam to the right edge: the dark panel collapses and the sketch panel
+ * widens, while each panel's content drifts at its own speed.
+ */
+const HX = "calc(84% + var(--m) * 16%)"; // seam x
+const HY = "calc(44.27% - var(--m) * 4.27%)"; // where the seam meets the D–E edge
 
-const Scene3D = dynamic(() => import("@/components/three/Scene3D"), {
-  ssr: false,
-});
+const POLY = {
+  minimal: "polygon(0 0, 45% 0, 40% 52%, 0 45%)",
+  brutal: "polygon(45% 0, 100% 0, 100% 40%, 70% 48%, 40% 52%)",
+  build: "polygon(0 45%, 40% 52%, 35% 100%, 0 100%)",
+  swiss: "polygon(40% 52%, 70% 48%, 65% 100%, 35% 100%)",
+  sketch: `polygon(70% 48%, ${HX} ${HY}, ${HX} 100%, 65% 100%)`,
+  dark: `polygon(${HX} ${HY}, 100% 40%, 100% 100%, ${HX} 100%)`,
+};
 
-const ease = [0.7, 0, 0.2, 1] as const;
+const SEAMS = ["M45 0 L40 52", "M0 45 L40 52 L70 48 L100 40", "M40 52 L35 100", "M70 48 L65 100"];
+
+/** Parallax helper: translate by `n` px per unit of --m */
+const drift = (x: number, y: number, extra = "") =>
+  ({ transform: `translate(calc(var(--m) * ${x}px), calc(var(--m) * ${y}px)) ${extra}` }) as React.CSSProperties;
 
 export default function Hero() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const planetY = useTransform(scrollYProgress, [0, 1], [0, 240]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>("[data-reveal-word]").forEach((el) => {
-        gsap.fromTo(
-          el,
-          { yPercent: 115, rotate: 5 },
-          {
-            yPercent: 0,
-            rotate: 0,
-            duration: 1.4,
-            ease: "expo.out",
-            delay: parseFloat(el.dataset.delay || "0"),
-          }
-        );
-      });
-    }, ref);
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section
-      ref={ref}
-      id="top"
-      className="relative isolate min-h-[100svh] w-full overflow-hidden bg-cream-50 text-ink-950"
-    >
-      {/* 3D background */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-60"
-        style={{ opacity }}
-      >
-        <Scene3D />
-      </motion.div>
+    <section id="top" aria-labelledby="hero-title" className="relative bg-black">
+      <h1 id="hero-title" className="sr-only">
+        Rahul — freelance web developer in Chennai. I build fast, modern websites, landing pages and React web apps
+        that turn visitors into enquiries.
+      </h1>
 
-      {/* Floating planet asset */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.6, rotate: -20 }}
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-        transition={{ duration: 1.8, ease, delay: 0.4 }}
-        className="pointer-events-none absolute -right-[35vw] top-32 h-[80vw] w-[80vw] opacity-50 mix-blend-multiply sm:-right-[20vw] sm:opacity-70 md:right-8 md:top-28 md:h-[55vh] md:w-[55vh] md:opacity-100"
-        style={{ y: planetY }}
-      >
-        <Image
-          src="/planet-1-1.png"
-          alt=""
-          fill
-          sizes="(min-width: 768px) 55vh, 80vw"
-          className="animate-spinSlow object-contain"
-          priority
-        />
-      </motion.div>
+      {/* ---------- Desktop: fractured panels ---------- */}
+      <div data-fx className="hero-fx relative hidden h-[100dvh] min-h-[660px] overflow-hidden lg:block">
+        <Panel poly={POLY.minimal} className="bg-night bg-dots-dark" delay={0}>
+          <div className="absolute left-[12%] top-[16%] w-[26%]" style={drift(0, -120)}>
+            <MinimalCopy />
+          </div>
+        </Panel>
 
-      {/* Top meta row */}
-      <div className="absolute left-0 right-0 top-24 z-10 mx-auto flex max-w-[1700px] items-start justify-between px-4 sm:px-6 sm:top-28 md:px-10">
-        <motion.span
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0, duration: 0.8 }}
-          className="mono-eyebrow flex items-center gap-2 sm:gap-3"
-        >
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red shadow-[0_0_10px_rgba(235,89,57,0.8)]" />
-          <span className="hidden sm:inline">Full Stack Developer · Freelancer</span>
-          <span className="sm:hidden">Full Stack · Freelance</span>
-        </motion.span>
+        <Panel poly={POLY.brutal} className="bg-sun bg-grid-yellow" delay={80}>
+          <div className="absolute right-[15%] top-[13%] text-right" style={drift(-40, 70)}>
+            <BrutalCopy />
+          </div>
+        </Panel>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.1, duration: 0.8 }}
-          className="hidden text-right md:block"
-        >
-          <p className="mono-eyebrow text-ink-950/55">
-            Currently —{" "}
-            <span className="text-ink-950">@ Jaxpat Technology</span>
+        <Panel poly={POLY.build} className="bg-beige" delay={160}>
+          <div className="absolute inset-0" style={drift(-60, 30)}>
+            <BuildArt />
+          </div>
+          <div className="absolute left-[10%] top-[68%]" style={drift(40, -90, "rotate(calc(var(--m) * -6deg))")}>
+            <BuildCopy />
+          </div>
+        </Panel>
+
+        <Panel poly={POLY.swiss} className="bg-crimson" delay={240}>
+          <div className="absolute left-[43%] top-[67%]" style={drift(0, -140)}>
+            <SwissCopy />
+          </div>
+        </Panel>
+
+        <Panel poly={POLY.sketch} className="bg-paper-sketch bg-dots-paper" delay={320}>
+          <div className="absolute left-[68.5%] top-[64%] w-[15%]" style={{ transform: "translate(calc(var(--m) * 8vw), calc(var(--m) * -160px))" }}>
+            <SketchCopy />
+          </div>
+        </Panel>
+
+        <Panel poly={POLY.dark} className="bg-night bg-dots-dark" delay={400}>
+          <p
+            className="absolute bottom-10 left-[91%] font-mono text-[11px] uppercase tracking-[0.3em] text-white/60 [writing-mode:vertical-rl]"
+            style={{ opacity: "calc(1 - var(--m) * 1.5)" }}
+          >
+            scroll to explore →
           </p>
-          <p className="mono-eyebrow mt-1 text-ink-950/35">
-            MERN · Next.js · AI · Three.js
-          </p>
-        </motion.div>
-      </div>
+        </Panel>
 
-      {/* Big tagline */}
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1700px] flex-col justify-between px-4 pb-12 pt-36 sm:px-6 sm:pb-16 sm:pt-40 md:px-10 md:pb-20 md:pt-44">
-        <div>
-          <motion.div
-            style={{ y }}
-            className="display text-[17vw] tracking-tightest sm:text-[18vw] md:text-[12.5vw] lg:text-[11.5vw]"
-          >
-            <div className="overflow-hidden">
-              <div
-                data-reveal-word
-                data-delay="0.18"
-                className="inline-flex items-baseline gap-[0.2em]"
-              >
-                <span>hi,</span>
-                <span>i'm</span>
-              </div>
-            </div>
-            <div className="overflow-hidden">
-              <div
-                data-reveal-word
-                data-delay="0.30"
-                className="inline-flex flex-wrap items-baseline gap-x-[0.2em]"
-              >
-                <ScrambleText
-                  text="rahul"
-                  trigger="view"
-                  delay={400}
-                  duration={780}
-                  tick={28}
-                  className="inline-block"
-                />
-                <span className="inline-block h-[0.45em] w-[0.45em] translate-y-[-0.15em] rounded-full bg-red shadow-[0_0_30px_rgba(235,89,57,0.55)]" />
-                <span className="text-stroke">a full</span>
-              </div>
-            </div>
-            <div className="overflow-hidden">
-              <div
-                data-reveal-word
-                data-delay="0.44"
-                className="inline-flex flex-wrap items-baseline gap-x-[0.2em]"
-              >
-                <span>stack</span>
-                <span className="text-red">developer.</span>
-              </div>
-            </div>
-          </motion.div>
+        <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {SEAMS.map((d) => (
+            <path key={d} d={d} stroke="#000" strokeWidth="7" fill="none" vectorEffect="non-scaling-stroke" />
+          ))}
+        </svg>
+        {/* moving seam */}
+        <span aria-hidden className="absolute bottom-0 w-[7px] -translate-x-1/2 bg-black" style={{ left: HX, top: HY }} />
 
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3, duration: 1, ease }}
-            className="body-l mt-8 max-w-md text-ink-950/65 sm:mt-10 md:mt-12"
-          >
-            I build modern, high-performance web applications and digital
-            solutions with the MERN stack, Next.js, and AI integration —
-            shipping clean UI, scalable backends and the occasional Three.js
-            scene along the way.
-          </motion.p>
-        </div>
-
-        <div className="mt-10 flex flex-col gap-8 sm:mt-14 md:mt-0 md:flex-row md:items-end md:justify-between">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.45, duration: 1, ease }}
-            className="flex flex-wrap items-center gap-4 sm:gap-5"
-          >
-            <a
-              href="#projects"
-              data-cursor="view"
-              data-cursor-label="See projects"
-              className="group relative inline-flex items-center gap-3 rounded-full bg-ink-950 px-5 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-cream-50 transition hover:bg-red sm:px-6"
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red shadow-[0_0_10px_rgba(235,89,57,0.9)] group-hover:bg-cream-50" />
-              View Projects
-              <ArrowDR />
-            </a>
-            <a
-              href="#connect"
-              data-cursor="hover"
-              className="hover-line font-mono text-[11px] uppercase tracking-[0.22em] text-ink-950/70"
-            >
-              Hire me ↗
-            </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.55, duration: 0.8 }}
-            className="flex items-end justify-between gap-6 sm:justify-start sm:gap-12"
-          >
-            <Stat n="20+" label="Projects" />
-            <Stat n="MERN" label="Stack" />
-            <Stat n="AI" label="Integrated" />
-          </motion.div>
+        <div className="absolute left-[40%] top-[52%] z-10 -translate-x-[45%] -translate-y-[96%]">
+          <Doodle />
         </div>
       </div>
 
-      {/* Scroll cue */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.6, duration: 1 }}
-        className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2"
-      >
-        <div className="flex flex-col items-center gap-2">
-          <span className="mono-eyebrow text-ink-950/45">Scroll</span>
-          <span className="relative h-10 w-px overflow-hidden bg-ink-950/15">
-            <span className="absolute left-0 top-0 h-3 w-px animate-[float_1.6s_ease-in-out_infinite] bg-red" />
-          </span>
-        </div>
-      </motion.div>
+      {/* ---------- Mobile / tablet: slanted bands ---------- */}
+      <div className="flex flex-col bg-black lg:hidden">
+        <Band className="bg-night bg-dots-dark pb-20 pt-20" first>
+          <div className="mx-auto max-w-sm px-6 text-center">
+            <MinimalCopy />
+          </div>
+        </Band>
+        <Band className="bg-sun bg-grid-yellow pb-16 pt-14">
+          <BandRise>
+            <div className="relative mx-auto flex max-w-sm justify-center px-6 text-center">
+              <BrutalCopy />
+            </div>
+          </BandRise>
+          <div className="absolute bottom-3 right-4 scale-[0.7] sm:right-[12%]">
+            <Doodle />
+          </div>
+        </Band>
+        <Band className="relative overflow-hidden bg-beige py-24">
+          <BuildArt />
+          <BandRise>
+            <div className="relative flex justify-center">
+              <BuildCopy />
+            </div>
+          </BandRise>
+        </Band>
+        <Band className="bg-crimson py-16">
+          <BandRise>
+            <div className="flex justify-center px-6">
+              <SwissCopy />
+            </div>
+          </BandRise>
+        </Band>
+        <Band className="bg-paper-sketch bg-dots-paper pb-16 pt-14" last>
+          <BandRise>
+            <div className="mx-auto max-w-xs px-6">
+              <SketchCopy />
+            </div>
+          </BandRise>
+        </Band>
+      </div>
     </section>
   );
 }
 
-function Stat({ n, label }: { n: string; label: string }) {
+function Panel({ poly, className, delay, children }: { poly: string; className: string; delay: number; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col">
-      <span className="display-tight text-3xl text-ink-950 md:text-4xl">
-        {n}
-      </span>
-      <span className="mono-eyebrow mt-1 text-ink-950/50">{label}</span>
+    <div className={`absolute inset-0 animate-panelIn ${className}`} style={{ clipPath: poly, animationDelay: `${delay}ms` }}>
+      {children}
     </div>
   );
 }
 
-function ArrowDR() {
+/** A slanted band; consecutive bands overlap by the slant so a black seam shows between them. */
+function Band({ className, children, first, last }: { className: string; children: React.ReactNode; first?: boolean; last?: boolean }) {
+  const top = first ? "0 0, 100% 0" : "0 28px, 100% 0";
+  const bottom = last ? "100% 100%, 0 100%" : "100% calc(100% - 28px), 0 100%";
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      className="transition-transform duration-500 group-hover:rotate-[-45deg]"
+    <div className={`relative ${className} ${first ? "" : "-mt-[22px]"}`} style={{ clipPath: `polygon(${top}, ${bottom})` }}>
+      {children}
+    </div>
+  );
+}
+
+/** Mobile band content rises and fades in as the band scrolls into view. */
+function BandRise({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      data-fx
+      className="relative"
+      style={{ transform: "translateY(calc((1 - var(--pe)) * 60px))", opacity: "calc(0.2 + var(--pe) * 0.8)" }}
     >
-      <path
-        d="M2 10 L10 2 M4 2 H10 V8"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="square"
-      />
-    </svg>
+      {children}
+    </div>
+  );
+}
+
+/* ---------- panel contents (shared by both layouts) ---------- */
+
+function MinimalCopy() {
+  return (
+    <>
+      <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/50">[ style 01 : minimalism ]</p>
+      <p aria-hidden className="mt-3 font-sans text-[clamp(3.4rem,6.4vw,6.2rem)] font-light leading-none tracking-[0.05em] text-white/85">
+        rahul
+      </p>
+      <p className="mt-4 font-sans text-sm font-light leading-relaxed tracking-[0.12em] text-white/70">
+        websites that turn visitors into enquiries.
+      </p>
+      <p className="mt-4 flex flex-wrap justify-center gap-x-6 font-sans text-sm font-light tracking-[0.14em] text-white/80 lg:justify-start">
+        <a href="#work" className="inline-flex min-h-[44px] items-center underline-offset-8 hover:text-white hover:underline">
+          view work ↓
+        </a>
+        <a href="#contact" className="inline-flex min-h-[44px] items-center underline-offset-8 hover:text-white hover:underline">
+          hire me →
+        </a>
+      </p>
+    </>
+  );
+}
+
+function BrutalCopy() {
+  return (
+    <div>
+      <p className="inline-block border-2 border-black bg-black px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-sun shadow-[3px_3px_0_#000]">
+        style 02 // neobrutalism
+      </p>
+      <p aria-hidden className="mt-5 font-mega text-[clamp(4.2rem,8.5vw,8.5rem)] font-black leading-[0.85] text-black [text-shadow:-3px_3px_0_#000,_-7px_7px_0_rgba(0,0,0,0.22)]">
+        DEV
+      </p>
+      <p className="mt-4 font-mono text-xs font-bold uppercase leading-relaxed text-black/80">
+        Freelance web developer
+        <br />
+        Chennai, India · IST
+      </p>
+    </div>
+  );
+}
+
+function BuildArt() {
+  return (
+    <>
+      <div aria-hidden className="absolute -left-[20%] top-[46%] h-[24%] w-[140%] -rotate-[22deg] bg-brick lg:top-[62%] lg:h-[20%]" />
+      <div aria-hidden className="absolute bottom-0 left-0 h-[22%] w-[9%] bg-[#b04545] [clip-path:polygon(100%_0,100%_100%,0_100%)]" />
+      <div aria-hidden className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border-[14px] border-black/85 lg:hidden" />
+    </>
+  );
+}
+
+function BuildCopy() {
+  return (
+    <div>
+      <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-[#0f766e]">структура / 03</p>
+      <p aria-hidden className="mt-2 -rotate-[8deg] font-staat text-[clamp(4.2rem,6.5vw,6.5rem)] leading-none text-teal [text-shadow:6px_4px_0_#111]">
+        BUILD
+      </p>
+    </div>
+  );
+}
+
+function SwissCopy() {
+  return (
+    <div className="text-white">
+      <p className="font-swiss text-sm font-bold text-white/85">[04]&nbsp;&nbsp;IN-600001</p>
+      <p aria-hidden className="mt-1 font-swiss text-[clamp(3.8rem,5.6vw,5.6rem)] font-black leading-none tracking-tight">
+        SHIP
+      </p>
+      <div className="mt-4 flex gap-6 border-t border-white/70 pt-3 font-swiss text-[11px] uppercase tracking-wide text-white">
+        <span>React</span>
+        <span>Next.js</span>
+        <span>Tailwind</span>
+      </div>
+    </div>
+  );
+}
+
+function SketchCopy() {
+  return (
+    <div className="text-center">
+      <p className="inline-block border-b border-dashed border-black/40 pb-1 font-mono text-[11px] tracking-[0.2em] text-black/65">
+        * aesthetic #05 *
+      </p>
+      <p className="mt-4 font-hand text-[clamp(1.7rem,2.1vw,2.2rem)] font-bold leading-tight text-black">your next website</p>
+      <svg aria-hidden viewBox="0 0 80 10" className="mx-auto mt-1 h-3 w-16">
+        <path d="M2 6 C 12 2, 22 9, 32 5 S 52 2, 62 6 S 74 8, 78 4" stroke="#111" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      </svg>
+      <a href="#contact" className="mt-5 inline-flex min-h-[48px] items-center gap-1 font-hand text-2xl font-bold text-[#1d4ed8] hover:underline">
+        let&rsquo;s talk
+        <svg aria-hidden viewBox="0 0 40 30" className="h-8 w-10">
+          <path d="M6 4 L18 15 L6 26 M20 4 L32 15 L20 26" stroke="#1d4ed8" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </a>
+    </div>
   );
 }

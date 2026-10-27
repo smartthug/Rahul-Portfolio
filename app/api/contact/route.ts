@@ -8,6 +8,9 @@ const FROM_EMAIL =
 // Always-works fallback sender on Resend (no domain verification required).
 const FALLBACK_FROM = "Portfolio <onboarding@resend.dev>";
 
+// ~1 MB of base64; the client downsizes the doodle to ≤1000px wide JPEG.
+const MAX_DRAWING_CHARS = 1_400_000;
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Very simple per-IP rate limit. Persists for the life of the serverless instance.
@@ -46,10 +49,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, message, company } = (body ?? {}) as Record<
-    string,
-    unknown
-  >;
+  const { name, email, message, company, projectType, budget, timeline, drawing } =
+    (body ?? {}) as Record<string, unknown>;
 
   // Honeypot — bots love filling every input. Real users never see this field.
   if (typeof company === "string" && company.trim() !== "") {
@@ -102,25 +103,59 @@ export async function POST(req: Request) {
   const cleanName = (name as string).trim().slice(0, 120);
   const cleanEmail = (email as string).trim().slice(0, 200);
   const cleanMessage = (message as string).trim().slice(0, 4000);
+  // Optional enquiry details — anything that isn't a short string is dropped.
+  const optional = (v: unknown, max = 80) =>
+    typeof v === "string" ? v.trim().slice(0, max) : "";
+  const details = [
+    ["Project", optional(projectType)],
+    ["Budget", optional(budget)],
+    ["Timeline", optional(timeline)],
+  ].filter(([, v]) => v) as [string, string][];
 
-  const subject = `New portfolio enquiry — ${cleanName}`;
+  // Optional doodle from the contact section, sent as a JPEG/PNG attachment.
+  // Anything that isn't a small base64 image data URL is ignored.
+  const DRAWING_RE = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/;
+  const drawingMatch =
+    typeof drawing === "string" && drawing.length <= MAX_DRAWING_CHARS
+      ? DRAWING_RE.exec(drawing)
+      : null;
+  const attachments = drawingMatch
+    ? [
+        {
+          filename: `doodle.${drawingMatch[1] === "png" ? "png" : "jpg"}`,
+          content: drawingMatch[2],
+        },
+      ]
+    : undefined;
+
+  const subject = `New project enquiry — ${cleanName}${
+    details[0]?.[0] === "Project" ? ` (${details[0][1]})` : ""
+  }`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color:#0d0d0d; line-height:1.55;">
       <h2 style="margin:0 0 12px; font-size:18px;">New message from your portfolio</h2>
       <table style="border-collapse:collapse; margin: 6px 0 14px;">
         <tr><td style="padding:4px 10px 4px 0; color:#555;">Name</td><td style="padding:4px 0;"><strong>${escape(cleanName)}</strong></td></tr>
         <tr><td style="padding:4px 10px 4px 0; color:#555;">Email</td><td style="padding:4px 0;"><a href="mailto:${escape(cleanEmail)}">${escape(cleanEmail)}</a></td></tr>
+        ${details
+          .map(
+            ([k, v]) =>
+              `<tr><td style="padding:4px 10px 4px 0; color:#555;">${k}</td><td style="padding:4px 0;">${escape(v)}</td></tr>`
+          )
+          .join("")}
       </table>
-      <p style="white-space:pre-wrap; margin:0; padding:14px 16px; border-left:3px solid #eb5939; background:#f6f1e8; border-radius:6px;">${escape(cleanMessage)}</p>
-      <p style="margin:18px 0 0; font-size:12px; color:#888;">— sent from rahul.dev portfolio · reply to land directly in their inbox.</p>
+      <p style="white-space:pre-wrap; margin:0; padding:14px 16px; border-left:3px solid #111111; background:#f5f1e8; border-radius:6px;">${escape(cleanMessage)}</p>
+      ${attachments ? '<p style="margin:14px 0 0; font-size:13px;">🎨 They attached a doodle from your contact page.</p>' : ""}
+      <p style="margin:18px 0 0; font-size:12px; color:#888;">— sent from your portfolio contact form · reply to land directly in their inbox.</p>
     </div>
   `;
 
   const text =
     `New message from your portfolio\n\n` +
     `Name:  ${cleanName}\n` +
-    `Email: ${cleanEmail}\n\n` +
-    `${cleanMessage}\n`;
+    `Email: ${cleanEmail}\n` +
+    details.map(([k, v]) => `${k}: ${v}\n`).join("") +
+    `\n${cleanMessage}\n`;
 
   const send = (from: string) =>
     fetch("https://api.resend.com/emails", {
@@ -136,6 +171,7 @@ export async function POST(req: Request) {
         subject,
         html,
         text,
+        attachments,
       }),
       // Resend is fast but we don't want serverless cold-start to hang.
       signal: AbortSignal.timeout(10_000),

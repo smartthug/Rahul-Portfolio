@@ -1,66 +1,78 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Multi-style design system (direction: creativeed.dev). Each section has its
+ * own palette — minimalism, neobrutalism, constructivism, Swiss, retro OS and
+ * sketch paper — tied together by thick black seams and hard shadows.
+ */
 const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts}",
   ],
   theme: {
     extend: {
       colors: {
-        cream: {
-          50: "#f6f1e8",
-          100: "#efe7d6",
-          200: "#e6dcc6",
-        },
-        ink: {
-          950: "#0d0d0d",
-          900: "#1a1a1a",
-          800: "#2a2a2a",
-          700: "#4d4d4d",
-        },
-        primary: {
-          DEFAULT: "#b7ab98",
-          50: "#ece7dd",
-          100: "#d8cfbe",
-        },
-        red: {
-          DEFAULT: "#eb5939",
-          dark: "#c5462b",
-        },
+        // shared
+        paper: { DEFAULT: "#f5f1e8", dim: "#ebe5d6", sketch: "#fbf7f0" },
+        ink: { DEFAULT: "#111111", soft: "#3d3d3d", mute: "#5c5c5c" },
+        night: "#1c1c1f",
+        sun: "#ffde4a",
+        coral: "#ff8a6b",
+        // hero panels
+        beige: "#e8e2d6",
+        brick: "#9b1c1c",
+        teal: "#4fd1c5",
+        crimson: "#e11d48",
+        // about
+        blood: "#d42222",
+        // projects
+        grape: { DEFAULT: "#a855f7", deep: "#6d28d9", ink: "#2e1065" },
+        violet: "#c4a5ff",
+        rose: "#ff8fab",
+        sky: "#8ee8f5",
+        mint: "#9fe3c3",
+        // retro OS
+        sage: "#d3e9df",
+        wood: { DEFAULT: "#c38e57", dark: "#8a5a2b", light: "#e7c49a" },
+        forest: { DEFAULT: "#2f6b55", dark: "#16382d" },
       },
       fontFamily: {
-        display: ["var(--font-display)", "ui-sans-serif", "system-ui"],
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui"],
+        mega: ["var(--font-mega)", "ui-sans-serif", "system-ui"],
+        staat: ["var(--font-staat)", "Impact", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        hand: ["var(--font-hand)", "cursive"],
+        sketch: ["var(--font-sketch)", "cursive"],
+        pixel: ["var(--font-pixel)", "ui-monospace", "monospace"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+        swiss: ["'Helvetica Neue'", "Helvetica", "Arial", "sans-serif"],
+        // legacy alias used by error / 404 pages
+        display: ["var(--font-mega)", "ui-sans-serif", "system-ui"],
       },
-      letterSpacing: {
-        tightest: "-0.055em",
-        tighter2: "-0.035em",
+      borderWidth: { 3: "3px", 6: "6px" },
+      boxShadow: {
+        brut: "4px 4px 0 0 #111111",
+        "brut-sm": "2px 2px 0 0 #111111",
+        "brut-lg": "8px 8px 0 0 #111111",
+        win: "3px 3px 0 0 rgba(60, 35, 10, 0.45)",
       },
       keyframes: {
-        spinSlow: {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
+        sway: {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
         },
-        marquee: {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
+        panelIn: {
+          from: { opacity: "0", transform: "scale(1.04)" },
+          to: { opacity: "1", transform: "none" },
         },
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-12px)" },
-        },
-        ticker: {
-          "0%": { transform: "translateY(0)" },
-          "100%": { transform: "translateY(-50%)" },
-        },
+        blink: { "50%": { opacity: "0" } },
       },
       animation: {
-        spinSlow: "spinSlow 22s linear infinite",
-        marquee: "marquee 35s linear infinite",
-        float: "float 6s ease-in-out infinite",
-        ticker: "ticker 8s steps(8) infinite",
+        sway: "sway 3.2s ease-in-out infinite",
+        panelIn: "panelIn 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both",
+        blink: "blink 1s steps(1) infinite",
       },
     },
   },
